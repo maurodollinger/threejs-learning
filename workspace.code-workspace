@@ -1,0 +1,37 @@
+{
+	"folders": [
+		{
+			"path": "basics"
+		},
+		{
+			"path": "textures"
+		},
+		{
+			"path": "lights"
+		},
+		{
+			"path": "system_test"
+		},
+		{
+			"path": "withshaders"
+		},
+		{
+			"path": "globe_custom_shader"
+		},
+		{
+			"path": "three-basics"
+		},
+		{
+			"path": "criptoPlanets"
+		},
+		{
+			"path": "../Andromeda"
+		},
+		{
+			"path": "exoPlanets"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "three-basics"
+	}
+}

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Learning</title>
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+        }
+    </style>
+</head>
+<script type="module">
+    import * as THREE from './js/three.module.js';
+
+    let camera, scene, renderer;
+
+    main();
+
+    function main() {
+
+        camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        camera.position.set(0,50,-70);
+        camera.up.set(0,0,1);
+        camera.lookAt(0,0,0);
+
+        scene = new THREE.Scene();
+
+        {
+            const color = 0xFFFFFF;
+            const intensity = 1;
+            const ligth = new THREE.SpotLight(color,intensity);
+            ligth.position.set(0,10,-2);
+            scene.add(ligth);
+            scene.add(ligth.target);
+        }
+        {
+            const color = 0xFFFFFF;
+            const intensity = 2;
+            const light = new THREE.PointLight(color,intensity);
+            light.position.set(0,0,0);
+            scene.add(light);
+        }
+
+        const radius = 1;
+        const widthSegments = 20;
+        const heightSegments = 20;
+        const sphereGeometry = new THREE.SphereGeometry(radius,widthSegments,heightSegments);
+
+        // creo el sistema solar
+        const planetSystem = new THREE.Object3D();
+        scene.add(planetSystem);
+
+        // creo el sol
+        const starMaterial = new THREE.MeshPhongMaterial({color:0xFFFF00,emissive:0x101000});
+        const starMesh = new THREE.Mesh(sphereGeometry,starMaterial);
+        starMesh.scale.set(3,3,3);
+        scene.add(starMesh);
+
+        const planets = [];
+
+        function createOrbit(){
+            const orbit = new THREE.Object3D();
+            return orbit;
+        }
+        function createPlanet(color,scale,depth){
+            const planetMat = new THREE.MeshPhongMaterial({color:color});
+            const planetMesh = new THREE.Mesh(sphereGeometry,planetMat);
+            planetMesh.scale.set(scale,scale,scale);
+            planetMesh.position.set(0,0,depth);
+            return planetMesh;
+        }
+
+        function createCurve(xRadius,yRadius,aStartAngle,aClockwise){
+            const curve = new THREE.EllipseCurve(
+                0,  0,            // ax, aY
+                xRadius, yRadius,           // xRadius, yRadius
+                aStartAngle, aStartAngle+ 2 * Math.PI,  // aStartAngle, aEndAngle
+                aClockwise,            // aClockwise
+                0                 // aRotation
+            );
+            return curve;
+        }
+        const orb01 = createOrbit();
+        const pl01 = createPlanet(0xA0FA20,1,1);
+        const pl01Curve = createCurve(20,10,0,false);
+        const pl01Position = new THREE.Vector2();
+        orb01.add(pl01);
+        planetSystem.add(orb01);
+        
+        const orb02 = createOrbit();
+        const pl02 = createPlanet(0x0F00F2,2,4);
+        const pl02Curve = createCurve(10,20,20,true);
+        const pl02Position = new THREE.Vector2();
+        orb02.add(pl02);
+        planetSystem.add(orb02);
+
+      /*  {
+            const points = pl02Curve.getPoints( 50 );
+            const geometry = new THREE.BufferGeometry().setFromPoints( points );
+            const material = new THREE.LineBasicMaterial( { color : 0x550000 } );
+
+            // Create the final object to add to the scene
+            const ellipse = new THREE.Line( geometry, material );
+            planetSystem.add(ellipse);
+        }*/
+
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+
+        function resizeRendererToDisplaySize(renderer) {
+            const canvas = renderer.domElement;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const needResize = canvas.width !== width || canvas.height !== height;
+            if (needResize) {
+            renderer.setSize(width, height, false);
+            }
+            return needResize;
+        }
+
+        function render(time) {
+            time *= 0.001;
+
+            if (resizeRendererToDisplaySize(renderer)) {
+            const canvas = renderer.domElement;
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+            }
+
+            const plTime = time * .005;
+            pl01Curve.getPointAt(plTime % 1, pl01Position);
+            pl01.position.set(pl01Position.x,pl01Position.y);
+            
+            pl02Curve.getPointAt(plTime % 1, pl02Position);
+            pl02.position.set(pl02Position.x,pl02Position.y);
+
+            renderer.render(scene, camera);
+
+            requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
+
+    }
+</script>
+<body>
+</body>
+</html>

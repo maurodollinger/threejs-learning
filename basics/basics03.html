@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+            html, body {
+               margin: 0;
+               height: 100%;
+            }
+            #c {
+               width: 100%;
+               height: 100%;
+               display: block;
+            }
+            </style>
+	</head>
+
+    <script type="module">
+
+        // Find the latest version by visiting https://cdn.skypack.dev/three.
+      
+        import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js';
+        import {GUI} from 'https://threejsfundamentals.org/threejs/../3rdparty/dat.gui.module.js';
+
+        function main() {
+            const canvas = document.querySelector('#c');
+            const renderer = new THREE.WebGLRenderer({canvas});
+            const gui = new GUI();
+
+            const fov = 40;
+            const aspect = 2;  // the canvas default
+            const near = 0.1;
+            const far = 1000;
+            const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+            camera.position.set(0,50,-70);
+            camera.up.set(0,0,1);
+            camera.lookAt(0,0,0);
+
+            const scene = new THREE.Scene();
+
+            {
+                const color = 0xFFFFFF;
+                const intensity = 3;
+                const ligth = new THREE.PointLight(color,intensity);
+                scene.add(ligth);
+            }
+            {
+                const color = 0xFF1111;
+                const intensity = 0.5;
+                const ligth = new THREE.DirectionalLight(color,intensity);
+                ligth.position.set(0,10,2);
+                scene.add(ligth);
+            }
+
+            const objects = [];
+
+            // creo la esfera
+            const radius = 1;
+            const widthSegments = 12;
+            const heightSegments = 12;
+            const sphereGeometry = new THREE.SphereGeometry(radius,widthSegments,heightSegments);
+
+            // creo el sistema solar
+            const solarSystem = new THREE.Object3D();
+            solarSystem.name = "solarSystem";
+            scene.add(solarSystem);
+            objects.push(solarSystem);
+
+            // creo el sol
+            const sunMaterial = new THREE.MeshPhongMaterial({color:0xFFFF00,emissive:0xAAAA00});
+            const sunMesh = new THREE.Mesh(sphereGeometry,sunMaterial);
+            sunMesh.scale.set(5,5,5);
+            sunMesh.name = "sunMesh";
+            scene.add(sunMesh);
+           // objects.push(sunMesh);
+
+            //creo la orbita de la tierra
+            const earthOrbit = new THREE.Object3D();
+            earthOrbit.name = "earthOrbit";
+            earthOrbit.position.x = 0;
+            solarSystem.add(earthOrbit);
+            objects.push(earthOrbit);
+
+            const earthCurve = new THREE.EllipseCurve(
+                0,  0,            // ax, aY
+                20, 10,           // xRadius, yRadius
+                0,  2 * Math.PI,  // aStartAngle, aEndAngle
+                false,            // aClockwise
+                0                 // aRotation
+            );
+
+            {
+                const points = earthCurve.getPoints( 50 );
+                const geometry = new THREE.BufferGeometry().setFromPoints( points );
+                const material = new THREE.LineBasicMaterial( { color : 0x550000 } );
+
+                // Create the final object to add to the scene
+                const ellipse = new THREE.Line( geometry, material );
+                scene.add(ellipse);
+            }
+            
+
+            // creo la tierra
+            const earthMaterial = new THREE.MeshPhongMaterial({color:0x2233FF,emmisive:0x112244});
+            const earthMesh = new THREE.Mesh(sphereGeometry,earthMaterial);
+            earthMesh.name = "earthMesh";
+            earthOrbit.add(earthMesh);
+            objects.push(earthMesh);
+
+            // creo la orbita de la luna
+            const moonOrbit = new THREE.Object3D();
+            moonOrbit.name = "moonOrbit";
+          //  moonOrbit.position.x = 2;
+            earthOrbit.add(moonOrbit);
+            objects.push(moonOrbit);
+
+            const moonCurve = new THREE.EllipseCurve(
+                0,  0,            // ax, aY
+                3, 3,           // xRadius, yRadius
+                0,  2 * Math.PI,  // aStartAngle, aEndAngle
+                false,            // aClockwise
+                0                 // aRotation
+            );
+
+            {
+                const points = moonCurve.getPoints( 50 );
+                const geometry = new THREE.BufferGeometry().setFromPoints( points );
+                const material = new THREE.LineBasicMaterial( { color : 0x550000 } );
+
+                // Create the final object to add to the scene
+                const ellipse = new THREE.Line( geometry, material );
+                moonOrbit.add(ellipse);
+            }
+
+            // creo la luna
+            const moonMaterial = new THREE.MeshPhongMaterial({color:0x888888,emmisive:0x222222});
+            const moonMesh = new THREE.Mesh(sphereGeometry,moonMaterial);
+            moonMesh.name = "moonMesh";
+            moonMesh.scale.set(.5,.5,.5);
+            moonOrbit.add(moonMesh);
+            objects.push(moonMesh);
+
+
+            class AxisGridHelper {
+                constructor(node, units = 10) {
+                    const axes = new THREE.AxesHelper();
+                    axes.material.depthTest = false;
+                    axes.renderOrder = 2;  // after the grid
+                    node.add(axes);
+                
+                    const grid = new THREE.GridHelper(units, units);
+                    grid.material.depthTest = false;
+                    grid.renderOrder = 1;
+                    node.add(grid);
+                
+                    this.grid = grid;
+                    this.axes = axes;
+                    this.visible = false;
+                }
+                get visible() {
+                    return this._visible;
+                }
+                set visible(v) {
+                    this._visible = v;
+                    this.grid.visible = v;
+                    this.axes.visible = v;
+                }
+            }
+
+
+            // add an AxesHelper to each node
+            function makeAxisGrid(node, label, units) {
+            const helper = new AxisGridHelper(node, units);
+            gui.add(helper, 'visible').name(label);
+            }
+            
+            makeAxisGrid(solarSystem, 'solarSystem', 25);
+            makeAxisGrid(sunMesh, 'sunMesh');
+            makeAxisGrid(earthOrbit, 'earthOrbit');
+            makeAxisGrid(earthMesh, 'earthMesh');
+            makeAxisGrid(moonOrbit, 'moonOrbit');
+            makeAxisGrid(moonMesh, 'moonMesh');
+
+            function resizeRendererToDisplaySize(renderer) {
+                const canvas = renderer.domElement;
+                const width = canvas.clientWidth;
+                const height = canvas.clientHeight;
+                const needResize = canvas.width !== width || canvas.height !== height;
+                if (needResize) {
+                renderer.setSize(width, height, false);
+                }
+                return needResize;
+            }
+
+            const earthPosition = new THREE.Vector2();
+            const moonPosition = new THREE.Vector2();
+
+            function render(time) {
+                time *= 0.001;
+
+                if (resizeRendererToDisplaySize(renderer)) {
+                const canvas = renderer.domElement;
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+                }
+
+               // objects.forEach((obj) => {
+                   // console.log(obj.name);
+                    //if(obj.name != "solarPivot") 
+                  //  obj.rotation.y = time/10;
+               // });
+
+                const earthTime = time * .05;
+                earthCurve.getPointAt(earthTime % 1, earthPosition);
+                earthMesh.position.set(earthPosition.x,earthPosition.y);
+
+                moonOrbit.position.set(earthPosition.x,earthPosition.y);
+                const moonTime = time * .5;
+                moonCurve.getPointAt(moonTime % 1, moonPosition);
+                moonMesh.position.set(moonPosition.x,moonPosition.y);
+
+                renderer.render(scene, camera);
+
+                requestAnimationFrame(render);
+            }
+
+            requestAnimationFrame(render);
+        }
+        main();
+    </script>
+	<body>
+		
+        <canvas id="c"></canvas>
+	</body>
+</html>
